@@ -19,10 +19,203 @@
         <div id="level">Level: 1</div>
     </div>
   <style>
-    
+    #game-container {
+    display: flex; /* or grid */
+}
+
+#grid {
+    width: 640px; /* Adjust as needed */
+    height: 640px; /* Adjust as needed */
+    display: grid;
+    grid-template-columns: repeat(64, 10px); /* 10px cells */
+    grid-template-rows: repeat(64, 10px);
+    border: 1px solid black;
+}
+
+.grid-cell {
+    /* Optional: Add background color or border for visibility */
+}
+
+.item { /* Style for store items */
+    cursor: pointer;
+}
+
+/* ... more styles for other elements ... */
   </style>
     <script>
-      
+      const grid = document.getElementById('grid');
+const moneyDisplay = document.getElementById('money');
+const storeItemsContainer = document.getElementById('items');
+// ... other element selectors
+
+let money = 0;
+let level = 1;
+let selectedItem = null;
+const gridData = []; // 2D array to track placed items
+
+// Item Data (Objects):
+const items = {
+    woodTable: { name: "Wood Table", price: 50, width: 1, height: 1, image: "wood_table.png", type: "table" },
+    tikiTable: { name: "Tiki Table", price: 200, width: 2, height: 1, image: "tiki_table.png", type: "table" },
+    // ... more items
+};
+
+// Initialize Grid:
+for (let i = 0; i < 64; i++) {
+    gridData[i] = [];
+    for (let j = 0; j < 64; j++) {
+        const cell = document.createElement('div');
+        cell.classList.add('grid-cell');
+        cell.dataset.x = j; // Store coordinates
+        cell.dataset.y = i;
+        cell.addEventListener('click', handleGridClick);
+        grid.appendChild(cell);
+        gridData[i][j] = null; // Initially empty
+    }
+}
+
+// Populate Store:
+for (const itemName in items) {
+    const item = items[itemName];
+    const itemDiv = document.createElement('div');
+    itemDiv.classList.add('item');
+    itemDiv.textContent = `${item.name} ($${item.price})`;
+    itemDiv.dataset.item = itemName; // Store item name
+    itemDiv.addEventListener('click', () => {
+        selectedItem = item;
+    });
+    storeItemsContainer.appendChild(itemDiv);
+}
+
+function handleGridClick(event) {
+    const x = parseInt(event.target.dataset.x);
+    const y = parseInt(event.target.dataset.y);
+
+    if (selectedItem && canPlaceItem(x, y, selectedItem)) {
+        placeItem(x, y, selectedItem);
+    }
+}
+
+function canPlaceItem(x, y, item) {
+    // Check if enough money
+    if (money < item.price) return false;
+
+    // Check if space is available
+    for (let i = 0; i < item.height; i++) {
+        for (let j = 0; j < item.width; j++) {
+            if (x + j >= 64 || y + i >= 64 || gridData[y + i][x + j] !== null) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+function placeItem(x, y, item) {
+    // ... (Code to create item element, position it, update gridData, deduct money, etc.)
+}
+
+// ... (Functions for removing items, customer logic, cooking, leveling, etc.)
+        // ... (Grid and Store initialization from previous response)
+
+// Game Variables
+let money = 100; // Starting money
+let level = 1;
+let selectedItem = null;
+const gridData = []; // 2D array to track placed items
+const placedItems = []; // Array to hold placed item objects
+
+// Item Data (Objects):  (Add more items as needed)
+const items = {
+    woodTable: { name: "Wood Table", price: 50, width: 1, height: 1, image: "wood_table.png", type: "table" },
+    tikiTable: { name: "Tiki Table", price: 200, width: 2, height: 1, image: "tiki_table.png", type: "table" },
+    woodChair: { name: "Wood Chair", price: 25, width: 1, height: 1, image: "wood_chair.png", type: "chair" },
+    redBooth: { name: "Red Booth", price: 150, width: 2, height: 2, image: "red_booth.png", type: "table" },
+    cheapStove: { name: "Cheap Stove", price: 50, width: 1, height: 1, image: "cheap_stove.png", type: "stove" },
+    betterStove: { name: "Better Stove", price: 100, width: 1, height: 1, image: "better_stove.png", type: "stove" },
+    // ... more items
+};
+
+// ... (Grid initialization)
+
+// ... (Store population)
+
+function handleGridClick(event) {
+    const x = parseInt(event.target.dataset.x);
+    const y = parseInt(event.target.dataset.y);
+
+    if (selectedItem && canPlaceItem(x, y, selectedItem)) {
+        placeItem(x, y, selectedItem);
+    } else if (event.target.classList.contains('placed-item')) { // Check if clicking an item
+        // Handle item removal or dragging here (see below)
+        const itemId = event.target.dataset.id;
+        const itemIndex = placedItems.findIndex(item => item.id === itemId);
+        if (itemIndex > -1) {
+            removeitem(placedItems[itemIndex]);
+        }
+    }
+}
+
+function canPlaceItem(x, y, item) {
+    // ... (Same as before)
+}
+
+function placeItem(x, y, item) {
+    if (money < item.price) return;
+    const itemId = generateId(); // Unique ID for each placed item
+    const itemDiv = document.createElement('div');
+    itemDiv.classList.add('placed-item', item.type); // Add type class
+    itemDiv.style.backgroundImage = `url(${item.image})`;
+    itemDiv.style.width = `${item.width * 10}px`; // Adjust cell size (10px)
+    itemDiv.style.height = `${item.height * 10}px`;
+    itemDiv.style.position = 'absolute';
+    itemDiv.style.left = `${x * 10}px`;
+    itemDiv.style.top = `${y * 10}px`;
+    itemDiv.dataset.id = itemId; // Store unique ID
+    grid.appendChild(itemDiv);
+
+    // Update gridData:
+    for (let i = 0; i < item.height; i++) {
+        for (let j = 0; j < item.width; j++) {
+            gridData[y + i][x + j] = itemId; // Store item ID in grid
+        }
+    }
+
+    placedItems.push({ id: itemId, x, y, item }); // Store item object
+    money -= item.price;
+    updateMoneyDisplay();
+    selectedItem = null; // Deselect after placing
+}
+
+function removeitem(item) {
+    const itemDiv = document.querySelector(`.placed-item[data-id="${item.id}"]`);
+    if (itemDiv) {
+        grid.removeChild(itemDiv);
+
+        // Update gridData:
+        for (let i = 0; i < item.item.height; i++) {
+            for (let j = 0; j < item.item.width; j++) {
+                gridData[item.y + i][item.x + j] = null;
+            }
+        }
+        const itemIndex = placedItems.findIndex(i => i.id === item.id);
+        if (itemIndex > -1) {
+            placedItems.splice(itemIndex, 1);
+        }
+        money += item.item.price * 0.8; // Refund 80%
+        updateMoneyDisplay();
+    }
+}
+
+function updateMoneyDisplay() {
+    moneyDisplay.textContent = `Money: $${money}`;
+}
+
+function generateId() {
+    return Math.random().toString(36).substring(2, 15); // Simple unique ID
+}
+
+// ... (Customer logic, cooking, leveling, etc. - to be implemented)
     </script>
 </body>
 </html>
